@@ -1,0 +1,411 @@
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JANELAS NOTURNAS</title>
+    <style>
+        /* Resets gerais e estilos base */
+        body {
+            margin: 0;
+            font-family: 'Courier New', monospace;
+            background-color: #0c0f1b;
+            color: #d8dee9;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        * { box-sizing: border-box; }
+
+        /* Contentor do jogo */
+        #game-container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            border: 2px solid #333;
+        }
+
+        /* Painéis divididos */
+        #memorize-panel, #play-panel {
+            flex: 1;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        #memorize-panel { background-color: #0f1325; border-right: 1px solid #444; }
+        #play-panel { background-color: #0c0f1b; }
+
+        /* Rótulos e Textos */
+        .title { color: #88c0d0; font-size: 2.5rem; text-transform: uppercase; margin-top: 0; margin-bottom: 2rem; text-shadow: 0 0 10px #88c0d0; text-align: center; }
+        .instructions { font-size: 1.2rem; color: #a3be8c; margin-bottom: 2rem; text-align: center; }
+        .timer-label { font-size: 1.2rem; margin-bottom: 1rem; color: #eceff4; }
+        .timer-countdown { font-size: 2rem; color: #ebcb8b; font-weight: bold; text-shadow: 0 0 5px #ebcb8b; }
+
+        /* Prédio e Grelhas */
+        .building-container {
+            position: relative;
+            width: 80%;
+            max-width: 600px;
+            margin: auto;
+        }
+        .facade {
+            background-color: #111;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #333;
+            box-shadow: inset 0 0 20px #000;
+        }
+        .windows-grid {
+            display: grid;
+            gap: 10px;
+        }
+        .window {
+            width: 100%;
+            padding-bottom: 100%;
+            background-color: #1a1e36;
+            border: 2px solid transparent;
+            cursor: pointer;
+            border-radius: 3px;
+            transition: all 0.2s ease-in-out;
+            position: relative;
+        }
+        .window.on {
+            background-color: #ebcb8b;
+            border-color: #ebcb8b;
+            box-shadow: 0 0 20px #ebcb8b, 0 0 10px #ebcb8b;
+        }
+        .window:hover {
+            border-color: #a3be8c;
+            box-shadow: 0 0 10px #a3be8c;
+        }
+        .window.selected {
+            border-color: #ebcb8b;
+            box-shadow: 0 0 10px #ebcb8b;
+        }
+
+        /* Escada de incêndio */
+        .fire-escape {
+             position: absolute; right: -20px; top: 0; height: 100%; width: 20px;
+             background: repeating-linear-gradient(45deg, #2e3440, #2e3440 2px, #3b4252 2px, #3b4252 4px);
+             border-left: 2px solid #4c566a;
+        }
+
+        /* Botões */
+        .button {
+            padding: 1rem 2rem;
+            font-size: 1.5rem;
+            text-transform: uppercase;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 2rem;
+            transition: all 0.3s ease;
+        }
+        .button-start { background-color: #a3be8c; color: #0c0f1b; }
+        .button-start:hover { box-shadow: 0 0 20px #a3be8c; }
+        .button-check { background-color: #ebcb8b; color: #0c0f1b; }
+        .button-check:hover { box-shadow: 0 0 20px #ebcb8b; }
+        .button-giveup { background-color: #d08770; color: #0c0f1b; padding: 0.8rem 1.5rem; font-size: 1.2rem;}
+        .button-giveup:hover { box-shadow: 0 0 20px #d08770; }
+
+        /* Ecrãs de início e resultado */
+        #splash-screen, #feedback-screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background-color: rgba(12, 15, 27, 0.95);
+            z-index: 10;
+        }
+        #feedback-screen .instructions { font-size: 2rem; color: #ebcb8b;}
+                        
+        .back-to-menu-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background-color: #2e3440;
+            color: #eceff4;
+            border: 2px solid #4c566a;
+            padding: 0.6rem 1.2rem;
+            font-family: 'Courier New', monospace;
+            font-size: 1rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            text-decoration: none;
+            border-radius: 4px;
+            z-index: 100;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .back-to-menu-btn:hover {
+            background-color: #4c566a;
+            border-color: #88c0d0;
+            color: #88c0d0;
+            box-shadow: 0 0 10px rgba(136, 192, 208, 0.3);
+        }
+    </style>
+</head>
+<body>
+
+    <a href="index.html" class="back-to-menu-btn">↩ Menu</a>
+    
+    <div id="splash-screen">
+        <h1 class="title">DESAFIO DAS JANELAS NOTURNAS</h1>
+        <p class="instructions">NÍVEL 1 (grelha 3x3)</p>
+        <button id="start-btn" class="button button-start">Iniciar Jogo</button>
+    </div>
+
+    <div id="feedback-screen" style="display: none;">
+        <h1 class="title">Resultado</h1>
+        <p id="feedback-text" class="instructions"></p>
+        <button id="reset-btn" class="button button-start">Próximo Nível / Reiniciar</button>
+    </div>
+
+    <div id="game-container" style="display: none;">
+        <div id="memorize-panel">
+            <h2 class="title">NÍVEL 1: MEMORIZAR (7s)</h2>
+            <div class="timer-container">
+                <span class="timer-label">TEMPO:</span>
+                <span id="memorize-timer" class="timer-countdown">7s</span>
+            </div>
+            <p class="instructions">MEMORIZA O PADRÃO DE LUZES<br>RECORDA AS JANELAS ACESAS</p>
+            <div id="memorize-building" class="building-container">
+                <div class="facade">
+                    <div class="windows-grid" style="grid-template-columns: repeat(3, 1fr);"></div>
+                </div>
+                <div class="fire-escape"></div>
+            </div>
+        </div>
+
+        <div id="play-panel" style="display: none;">
+            <h2 class="title">NÍVEL 1: FASE DE SELEÇÃO (30s)</h2>
+            <div class="timer-container">
+                <span class="timer-label">TEMPO RESTANTE:</span>
+                <span id="play-timer" class="timer-countdown">30s</span>
+            </div>
+            <p class="instructions">ACENDE AS JANELAS CORRETAS</p>
+            <div id="play-building" class="building-container">
+                <div class="facade">
+                    <div class="windows-grid" style="grid-template-columns: repeat(3, 1fr);"></div>
+                </div>
+                <div class="fire-escape"></div>
+            </div>
+            <div class="control-buttons">
+                <button id="check-btn" class="button button-check">VERIFICAR PADRÃO</button>
+                <button id="giveup-btn" class="button button-giveup">DESISTIR</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        
+        const splashScreen = document.getElementById('splash-screen');
+        const feedbackScreen = document.getElementById('feedback-screen');
+        const feedbackText = document.getElementById('feedback-text');
+        const gameContainer = document.getElementById('game-container');
+        const memorizePanel = document.getElementById('memorize-panel');
+        const playPanel = document.getElementById('play-panel');
+        const memorizeTimerDisplay = document.getElementById('memorize-timer');
+        const playTimerDisplay = document.getElementById('play-timer');
+        const startBtn = document.getElementById('start-btn');
+        const checkBtn = document.getElementById('check-btn');
+        const giveupBtn = document.getElementById('giveup-btn');
+        const resetBtn = document.getElementById('reset-btn');
+
+        
+        let currentLevel = 1;
+        let gameState = 'splash';
+        let memorizeTimerInterval;
+        let playTimerInterval;
+        let correctPattern = [];
+        let playerPattern = [];
+        let config;
+
+        
+        const gameConfig = {
+            levels: [
+                { id: 1, gridSize: 3, numGlow: 4, memorizeTime: 7, playTime: 30 },
+                { id: 2, gridSize: 4, numGlow: 6, memorizeTime: 6, playTime: 35 },
+                { id: 3, gridSize: 5, numGlow: 10, memorizeTime: 5, playTime: 40 }
+            ]
+        };
+
+        function initLevel() {
+            if (currentLevel > gameConfig.levels.length) {
+                currentLevel = 1;
+            }
+            config = gameConfig.levels[currentLevel - 1];
+            gameState = 'memorize';
+            clearGrid('memorize-building');
+            clearGrid('play-building');
+            correctPattern = generatePattern(config.gridSize, config.numGlow);
+            playerPattern = Array(config.gridSize * config.gridSize).fill(false);
+            memorizeTimerDisplay.innerText = `${config.memorizeTime}s`;
+            playTimerDisplay.innerText = `${config.playTime}s`;
+
+            const memorizeTitle = memorizePanel.querySelector('.title');
+            memorizeTitle.innerText = `NÍVEL ${currentLevel}: MEMORIZAR (${config.memorizeTime}s)`;
+
+            splashScreen.style.display = 'none';
+            feedbackScreen.style.display = 'none';
+            gameContainer.style.display = 'flex';
+            memorizePanel.style.display = 'flex';
+            playPanel.style.display = 'none';
+
+            generateGrid(config.gridSize, 'memorize-building', false, correctPattern);
+            startMemorizeTimer(config.memorizeTime);
+        }
+
+        function clearGrid(containerId) {
+            const container = document.getElementById(containerId).querySelector('.windows-grid');
+            container.innerHTML = '';
+        }
+
+        function generatePattern(gridSize, numGlow) {
+            let pattern = [];
+            let totalWindows = gridSize * gridSize;
+            let indices = Array.from({length: totalWindows}, (_, i) => i);
+            let glowIndices = [];
+            for (let i = 0; i < numGlow; i++) {
+                let randomIdx = Math.floor(Math.random() * indices.length);
+                glowIndices.push(indices[randomIdx]);
+                indices.splice(randomIdx, 1);
+            }
+            for (let i = 0; i < totalWindows; i++) {
+                pattern.push(glowIndices.includes(i));
+            }
+            return pattern;
+        }
+
+        function generateGrid(gridSize, containerId, interactive = false, initialPattern = []) {
+            const container = document.getElementById(containerId).querySelector('.windows-grid');
+            container.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
+            
+            for (let i = 0; i < gridSize * gridSize; i++) {
+                const window = document.createElement('div');
+                window.className = 'window';
+                window.dataset.index = i;
+                if (initialPattern.length > 0 && initialPattern[i]) {
+                    window.classList.add('on');
+                }
+                if (interactive) {
+                    window.addEventListener('click', toggleWindow);
+                    window.classList.add('playable');
+                }
+                container.appendChild(window);
+            }
+        }
+
+        function toggleWindow(event) {
+            if (gameState !== 'play') return;
+            const window = event.target;
+            const index = parseInt(window.dataset.index);
+            window.classList.toggle('on');
+            playerPattern[index] = !playerPattern[index];
+        }
+
+        function startMemorizeTimer(seconds) {
+            let timeLeft = seconds;
+            clearInterval(memorizeTimerInterval);
+            memorizeTimerInterval = setInterval(() => {
+                timeLeft--;
+                memorizeTimerDisplay.innerText = `${timeLeft}s`;
+                if (timeLeft <= 0) {
+                    clearInterval(memorizeTimerInterval);
+                    startPlayPhase();
+                }
+            }, 1000);
+        }
+
+        function startPlayPhase() {
+            gameState = 'play';
+            memorizePanel.style.display = 'none';
+            playPanel.style.display = 'flex';
+            
+            const playTitle = playPanel.querySelector('.title');
+            playTitle.innerText = `NÍVEL ${currentLevel}: FASE DE SELEÇÃO (${config.playTime}s)`;
+
+            generateGrid(config.gridSize, 'play-building', true, Array(config.gridSize*config.gridSize).fill(false));
+            startPlayTimer(config.playTime);
+        }
+
+        function startPlayTimer(seconds) {
+            let timeLeft = seconds;
+            clearInterval(playTimerInterval);
+            playTimerInterval = setInterval(() => {
+                timeLeft--;
+                playTimerDisplay.innerText = `${timeLeft}s`;
+                if (timeLeft <= 0) {
+                    clearInterval(playTimerInterval);
+                    checkPattern();
+                }
+            }, 1000);
+        }
+
+        function checkPattern() {
+            if (gameState !== 'play') return; 
+            clearInterval(playTimerInterval);
+            gameState = 'feedback';
+            let correct = true;
+            for (let i = 0; i < correctPattern.length; i++) {
+                if (correctPattern[i] !== playerPattern[i]) {
+                    correct = false;
+                    break;
+                }
+            }
+
+            gameContainer.style.display = 'none';
+            feedbackScreen.style.display = 'flex';
+            if (correct) {
+              
+                localStorage.setItem(`game1_level${currentLevel}`, 'passed');
+
+                feedbackText.innerText = `Sucesso! O padrão coincide perfeitamente.`;
+                if (currentLevel < gameConfig.levels.length) {
+                    feedbackText.innerText += ` Avança para o próximo nível.`;
+                    resetBtn.innerText = `Próximo Nível (${currentLevel + 1})`;
+                } else {
+                    feedbackText.innerText += ` Jogo Concluído! Parabéns!`;
+                    resetBtn.innerText = `Reiniciar Jogo`;
+                    currentLevel = 0; 
+                }
+            } else {
+                feedbackText.innerText = `Falhaste. O padrão está incorreto.`;
+                resetBtn.innerText = `Tentar o Nível ${currentLevel} Novamente`;
+            }
+        }
+
+        function resetLevel() {
+            if (currentLevel === 0 || resetBtn.innerText === 'Reiniciar Jogo') {
+                currentLevel = 1;
+            } else if (resetBtn.innerText.includes('Novamente')) {
+                
+            } else if (currentLevel < gameConfig.levels.length) {
+                currentLevel++;
+            } else {
+                 currentLevel = 1;
+            }
+            initLevel();
+        }
+
+        function handleGiveUp() {
+            clearInterval(playTimerInterval);
+            currentLevel = 1; 
+            splashScreen.style.display = 'flex';
+            const instructionsText = splashScreen.querySelector('.instructions');
+            instructionsText.innerText = `NÍVEL 1 (grelha ${gameConfig.levels[0].gridSize}x${gameConfig.levels[0].gridSize})`;
+            gameContainer.style.display = 'none';
+            feedbackScreen.style.display = 'none';
+            gameState = 'splash';
+        }
+
+        startBtn.addEventListener('click', initLevel);
+        checkBtn.addEventListener('click', checkPattern);
+        giveupBtn.addEventListener('click', handleGiveUp);
+        resetBtn.addEventListener('click', resetLevel);
+    </script>
+</body>
+</html>

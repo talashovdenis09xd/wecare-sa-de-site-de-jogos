@@ -1,0 +1,421 @@
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JOGO DOS 15</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Courier New', monospace;
+            background-color: #0c0f1b;
+            color: #d8dee9;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        * { box-sizing: border-box; }
+
+        #game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            padding: 2rem;
+        }
+
+        .title { color: #88c0d0; font-size: 2.5rem; text-transform: uppercase; margin-top: 0; margin-bottom: 1rem; text-shadow: 0 0 10px #88c0d0; text-align: center; }
+        .instructions { font-size: 1.2rem; color: #a3be8c; margin-bottom: 1.5rem; text-align: center; }
+        .timer-container { font-size: 1.5rem; margin-bottom: 1.5rem; color: #eceff4; }
+        .timer-countdown { color: #ebcb8b; font-weight: bold; text-shadow: 0 0 5px #ebcb8b; }
+
+        #puzzle-board {
+            width: 400px;
+            height: 400px;
+            background-color: #111;
+            border: 4px solid #333;
+            border-radius: 5px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+            display: grid;
+            gap: 2px;
+            position: relative;
+        }
+
+        .tile {
+            background-repeat: no-repeat;
+            background-size: 400px 400px;
+            border-radius: 3px;
+            cursor: pointer;
+            position: relative;
+            transition: transform 0.1s ease, box-shadow 0.2s;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .tile:hover:not(.empty) {
+            box-shadow: inset 0 0 15px rgba(136, 192, 208, 0.5);
+        }
+        .tile.empty {
+            background: #1a1e36 !important;
+            cursor: default;
+            box-shadow: inset 0 0 10px #000;
+        }
+
+        .tile-number {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            background-color: rgba(12, 15, 27, 0.6);
+            color: #eceff4;
+            font-size: 0.8rem;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-weight: bold;
+            pointer-events: none;
+        }
+
+        .button {
+            padding: 1rem 2rem;
+            font-size: 1.5rem;
+            text-transform: uppercase;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        .button-start { background-color: #a3be8c; color: #0c0f1b; }
+        .button-start:hover { box-shadow: 0 0 20px #a3be8c; }
+        .button-giveup { background-color: #d08770; color: #0c0f1b; padding: 0.8rem 1.5rem; font-size: 1.2rem; }
+        .button-giveup:hover { box-shadow: 0 0 20px #d08770; }
+
+        /* Ecrãs de sobreposição universais */
+        #splash-screen, #feedback-screen, #preview-screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background-color: rgba(12, 15, 27, 0.95);
+            z-index: 10;
+        }
+        #feedback-screen .instructions { font-size: 2rem; color: #ebcb8b; }
+        
+        /* Caixa da imagem inteira na fase de memorização */
+        #preview-image-box {
+            width: 400px;
+            height: 400px;
+            background-size: 400px 400px;
+            background-repeat: no-repeat;
+            border: 4px solid #333;
+            border-radius: 5px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+        }
+		
+		.back-to-menu-btn {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background-color: #2e3440;
+    color: #eceff4;
+    border: 2px solid #4c566a;
+    padding: 0.6rem 1.2rem;
+    font-family: 'Courier New', monospace;
+    font-size: 1rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    text-decoration: none;
+    border-radius: 4px;
+    z-index: 100; /* Чтобы кнопка всегда была поверх окон */
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+		.back-to-menu-btn:hover {
+    background-color: #4c566a;
+    border-color: #88c0d0;
+    color: #88c0d0;
+    box-shadow: 0 0 10px rgba(136, 192, 208, 0.3);
+}
+    </style>
+</head>
+<body>
+	<a href="сайтигр.html" class="back-to-menu-btn">↩ Menu</a>
+    
+	<div id="splash-screen">
+        <h1 class="title">JOGO DOS 15</h1>
+        <p class="instructions">NÍVEL 1 (Grelha 3x3 — 75s)</p>
+        <button id="start-btn" class="button button-start">Iniciar Jogo</button>
+    </div>
+
+    <div id="preview-screen" style="display: none;">
+        <h1 id="preview-title" class="title">NÍVEL 1: MEMORIZAR</h1>
+        <div class="timer-container">
+            <span>TEMPO: </span>
+            <span id="preview-timer" class="timer-countdown">5s</span>
+        </div>
+        <p class="instructions">MEMORIZA A IMAGEM ANTES DE COMEÇAR</p>
+        <div id="preview-image-box"></div>
+    </div>
+
+    <div id="feedback-screen" style="display: none;">
+        <h1 class="title">Resultado</h1>
+        <p id="feedback-text" class="instructions"></p>
+        <button id="reset-btn" class="button button-start">Próximo Nível / Reiniciar</button>
+    </div>
+
+    <div id="game-container" style="display: none;">
+        <h2 id="level-title" class="title">NÍVEL 1</h2>
+        <p class="instructions">ORDENA AS PEÇAS PARA RECONSTRUIR A IMAGEM</p>
+        
+        <div class="timer-container">
+            <span>TEMPO RESTANTE: </span>
+            <span id="game-timer" class="timer-countdown">75s</span>
+        </div>
+
+        <div id="puzzle-board"></div>
+
+        <button id="giveup-btn" class="button button-giveup">Desistir</button>
+    </div>
+
+    <script>
+        const gameImages = [
+            "https://static.vecteezy.com/system/resources/thumbnails/008/856/903/small_2x/mountain-road-landscape-illustration-nature-highway-through-trees-and-meadow-cartoon-background-vector.jpg",
+            "https://png.pngtree.com/background/20250728/original/pngtree-rain-in-night-city-pedestrians-with-umbrellas-crossing-road-people-at-picture-image_15944095.jpg",
+            "https://cdn.dribbble.com/userupload/10092083/file/original-8679399c60996f9dec32e87648b44e26.jpg",
+            "https://png.pngtree.com/thumb_back/fh260/background/20230315/pngtree-summer-beach-cartoon-background-image_1948611.jpg",
+            "https://img.magnific.com/free-photo/digital-art-beautiful-mountains_23-2151123556.jpg",
+            "https://i.pinimg.com/736x/de/13/9a/de139a85885248985d06175190679d61.jpg"
+        ];
+
+        const splashScreen = document.getElementById('splash-screen');
+        const previewScreen = document.getElementById('preview-screen');
+        const previewTitle = document.getElementById('preview-title');
+        const previewTimerDisplay = document.getElementById('preview-timer');
+        const previewImageBox = document.getElementById('preview-image-box');
+        
+        const feedbackScreen = document.getElementById('feedback-screen');
+        const feedbackText = document.getElementById('feedback-text');
+        const gameContainer = document.getElementById('game-container');
+        const board = document.getElementById('puzzle-board');
+        const timerDisplay = document.getElementById('game-timer');
+        const levelTitle = document.getElementById('level-title');
+        
+        const startBtn = document.getElementById('start-btn');
+        const giveupBtn = document.getElementById('giveup-btn');
+        const resetBtn = document.getElementById('reset-btn');
+
+        const gameConfig = {
+            levels: [
+                { id: 1, gridSize: 3, timeLimit: 75 },
+                { id: 2, gridSize: 4, timeLimit: 175 },
+                { id: 3, gridSize: 5, timeLimit: 235 }
+            ]
+        };
+
+        let currentLevel = 1;
+        let config = gameConfig.levels[0];
+        let tilesArray = []; 
+        let timerInterval;
+        let timeLeft;
+        let currentImage = "";
+        let isLevelPassed = false;
+
+        function initLevel() {
+            config = gameConfig.levels[currentLevel - 1];
+            isLevelPassed = false;
+
+            const randomImgIdx = Math.floor(Math.random() * gameImages.length);
+            currentImage = gameImages[randomImgIdx];
+
+            startPreviewPhase();
+        }
+
+        function startPreviewPhase() {
+            let previewTimeLeft = 5;
+            previewTimerDisplay.innerText = `${previewTimeLeft}s`;
+            previewTitle.innerText = `NÍVEL ${currentLevel}: MEMORIZAR`;
+            previewImageBox.style.backgroundImage = `url('${currentImage}')`;
+
+            splashScreen.style.display = 'none';
+            feedbackScreen.style.display = 'none';
+            gameContainer.style.display = 'none';
+            previewScreen.style.display = 'flex';
+
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                previewTimeLeft--;
+                previewTimerDisplay.innerText = `${previewTimeLeft}s`;
+                if (previewTimeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    startPlayPhase();
+                }
+            }, 1000);
+        }
+
+        function startPlayPhase() {
+            timeLeft = config.timeLimit;
+            timerDisplay.innerText = `${timeLeft}s`;
+            levelTitle.innerText = `NÍVEL ${currentLevel}`;
+
+            board.style.gridTemplateColumns = `repeat(${config.gridSize}, 1fr)`;
+            board.style.gridTemplateRows = `repeat(${config.gridSize}, 1fr)`;
+
+            const totalTiles = config.gridSize * config.gridSize;
+            tilesArray = Array.from({ length: totalTiles }, (_, i) => i);
+
+            shuffleTiles();
+            renderBoard();
+
+            previewScreen.style.display = 'none';
+            gameContainer.style.display = 'flex';
+
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerDisplay.innerText = `${timeLeft}s`;
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    endGame(false); 
+                }
+            }, 1000);
+        }
+
+        function renderBoard() {
+            board.innerHTML = '';
+            const size = config.gridSize;
+            const tileSize = 400 / size;
+            const emptyTileValue = size * size - 1;
+
+            tilesArray.forEach((tileValue, currentPos) => {
+                const tile = document.createElement('div');
+                tile.className = 'tile';
+                
+                if (tileValue === emptyTileValue) {
+                    tile.classList.add('empty');
+                } else {
+                    const correctX = tileValue % size;
+                    const correctY = Math.floor(tileValue / size);
+                    
+                    tile.style.backgroundImage = `url('${currentImage}')`;
+                    tile.style.backgroundPosition = `-${correctX * tileSize}px -${correctY * tileSize}px`;
+                    
+                    const numberLabel = document.createElement('span');
+                    numberLabel.className = 'tile-number';
+                    numberLabel.innerText = tileValue + 1;
+                    tile.appendChild(numberLabel);
+
+                    tile.addEventListener('click', () => moveTile(currentPos));
+                }
+
+                board.appendChild(tile);
+            });
+        }
+
+        function moveTile(currentPos) {
+            const size = config.gridSize;
+            const emptyTileValue = size * size - 1;
+            const emptyPos = tilesArray.indexOf(emptyTileValue);
+
+            const currentX = currentPos % size;
+            const currentY = Math.floor(currentPos / size);
+            const emptyX = emptyPos % size;
+            const emptyY = Math.floor(emptyPos / size);
+
+            const isNeighbor = (Math.abs(currentX - emptyX) + Math.abs(currentY - emptyY)) === 1;
+
+            if (isNeighbor) {
+                tilesArray[emptyPos] = tilesArray[currentPos];
+                tilesArray[currentPos] = emptyTileValue;
+                
+                renderBoard();
+                checkWin();
+            }
+        }
+
+        function shuffleTiles() {
+            const size = config.gridSize;
+            const emptyTileValue = size * size - 1;
+
+            for (let k = 0; k < 200; k++) {
+                const emptyPos = tilesArray.indexOf(emptyTileValue);
+                const emptyX = emptyPos % size;
+                const emptyY = Math.floor(emptyPos / size);
+
+                let validNeighbors = [];
+
+                if (emptyX > 0) validNeighbors.push(emptyPos - 1); 
+                if (emptyX < size - 1) validNeighbors.push(emptyPos + 1); 
+                if (emptyY > 0) validNeighbors.push(emptyPos - size); 
+                if (emptyY < size - 1) validNeighbors.push(emptyPos + size); 
+
+                const randomNeighbor = validNeighbors[Math.floor(Math.random() * validNeighbors.length)];
+                tilesArray[emptyPos] = tilesArray[randomNeighbor];
+                tilesArray[randomNeighbor] = emptyTileValue;
+            }
+        }
+
+        function checkWin() {
+            let win = true;
+            for (let i = 0; i < tilesArray.length; i++) {
+                if (tilesArray[i] !== i) {
+                    win = false;
+                    break;
+                }
+            }
+            if (win) {
+                clearInterval(timerInterval);
+                endGame(true);
+            }
+        }
+
+        function endGame(success) {
+            gameContainer.style.display = 'none';
+            feedbackScreen.style.display = 'flex';
+            
+            if (success) {
+                isLevelPassed = true;
+                
+              
+                localStorage.setItem(`game4_level${currentLevel}`, 'passed');
+                
+                feedbackText.innerText = "Sucesso! Conseguiste resolver o puzzle.";
+                if (currentLevel < gameConfig.levels.length) {
+                    feedbackText.innerText += " Avança para o próximo nível.";
+                    resetBtn.innerText = `Próximo Nível (${currentLevel + 1})`;
+                } else {
+                    feedbackText.innerText += " Jogo Concluído! Parabéns mestre!";
+                    resetBtn.innerText = "Reiniciar Jogo";
+                }
+            } else {
+                isLevelPassed = false;
+                feedbackText.innerText = "O tempo acabou! O puzzle ficou incompleto.";
+                resetBtn.innerText = `Tentar o Nível ${currentLevel} Novamente`;
+            }
+        }
+
+        function handleReset() {
+            if (isLevelPassed) {
+                currentLevel++;
+                if (currentLevel > gameConfig.levels.length) {
+                    currentLevel = 1; 
+                }
+            }
+            initLevel();
+        }
+
+        function handleGiveUp() {
+            clearInterval(timerInterval);
+            currentLevel = 1;
+            isLevelPassed = false;
+            splashScreen.style.display = 'flex';
+            const instructionsText = splashScreen.querySelector('.instructions');
+            instructionsText.innerText = `NÍVEL 1 (Grelha 3x3 — 75s)`;
+            gameContainer.style.display = 'none';
+            feedbackScreen.style.display = 'none';
+            previewScreen.style.display = 'none';
+        }
+
+        startBtn.addEventListener('click', initLevel);
+        giveupBtn.addEventListener('click', handleGiveUp);
+        resetBtn.addEventListener('click', handleReset);
+    </script>
+</body>
+</html>

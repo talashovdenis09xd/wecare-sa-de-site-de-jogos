@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SITE DE JOGOS</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Courier New', monospace;
+            /* Установка фонового цвета и интеграция верхнего/нижнего изображений */
+            background-color: #318fe7;
+            background-image: url('cimanova.jpg'), url('baixonovo.jpg');
+            background-position: top center, bottom center;
+            background-repeat: no-repeat, no-repeat;
+            background-size: 100% auto, 100% auto;
+            color: #d8dee9;
+            min-height: 200vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            /* Отступы сверху и снизу увеличены (в vw), чтобы контент не перекрывал графику на картинках */
+            padding: 15vw 2rem 15vw 2rem;
+        }
+        * { box-sizing: border-box; }
+
+        .hub-header {
+            width: 100%;
+            max-width: 1000px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #0f1325;
+            padding: 1.5rem 2rem;
+            border: 2px solid #333;
+            border-radius: 8px;
+            margin-bottom: 3rem;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        /* Интерактивный профиль пользователя */
+        .profile-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 6px;
+            transition: background 0.2s ease;
+        }
+        .profile-section:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .avatar {
+            width: 60px;
+            height: 60px;
+            background-color: #88c0d0;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2rem;
+            box-shadow: 0 0 10px #88c0d0;
+        }
+        .profile-info h3 { margin: 0; color: #eceff4; font-size: 1.4rem; }
+        .profile-info p { margin: 3px 0 0 0; color: #a3be8c; font-size: 0.9rem; }
+
+        /* Статистика звезд */
+        .total-stars-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #1a1e36;
+            padding: 0.5rem 1.5rem;
+            border-radius: 20px;
+            border: 1px solid #444;
+        }
+        .total-stars-box span { font-size: 1.5rem; font-weight: bold; color: #ebcb8b; text-shadow: 0 0 5px #ebcb8b;}
+
+        .hub-title {
+            color: #0f1325; /* Изменено на темный для читаемости на голубом фоне */
+            font-size: 3rem;
+            text-transform: uppercase;
+            margin-bottom: 2rem;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+            text-align: center;
+        }
+
+        /* Сетка игр */
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        /* Карточка игры */
+        .game-card {
+            background: #111424;
+            border: 2px solid #2e3440;
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+        }
+        .game-card:hover {
+            transform: translateY(-5px);
+            border-color: #81a1c1;
+            box-shadow: 0 10px 25px rgba(129, 161, 193, 0.2);
+        }
+
+        .game-img-wrapper {
+            width: 100%;
+            height: 160px;
+            background-color: #1a1e36;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 4rem;
+            position: relative;
+            border-bottom: 2px solid #2e3440;
+        }
+		.game-img-wrapper img {
+			width: 100%;
+			height: 100%;
+			object-fit: cover; /* Картинка аккуратно заполнит всё окошко без искажения пропорций */
+	}
+        .game-card:nth-child(1) .game-img-wrapper { background: linear-gradient(135deg, #2b1055, #7597de); }
+        .game-card:nth-child(2) .game-img-wrapper { background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); }
+        .game-card:nth-child(3) .game-img-wrapper { background: linear-gradient(135deg, #1f4037, #99f2c8); }
+        .game-card:nth-child(4) .game-img-wrapper { background: linear-gradient(135deg, #e65c00, #f9d423); }
+        .game-card:nth-child(5) .game-img-wrapper { background: linear-gradient(135deg, #834d9b, #d04ed6); }
+
+        .game-details {
+            padding: 1.2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex-grow: 1;
+        }
+        .game-name {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #eceff4;
+            margin-bottom: 0.8rem;
+            text-transform: uppercase;
+            text-align: center;
+        }
+
+        /* Контейнер звезд */
+        .stars-row {
+            display: flex;
+            gap: 10px;
+        }
+        .star {
+            font-size: 1.5rem;
+            color: #2e3440;
+            text-shadow: none;
+            transition: all 0.3s ease;
+        }
+        .star.active {
+            color: #ebcb8b;
+            text-shadow: 0 0 8px #ebcb8b, 0 0 3px #ebcb8b;
+        }
+
+        .reset-all-btn {
+            margin-top: 3rem;
+            background: #d08770;
+            color: #0c0f1b;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            font-family: inherit;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: 0.2s;
+        }
+        .reset-all-btn:hover { box-shadow: 0 0 10px #d08770; }
+
+        /* Стили для модального окна профилей */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+            z-index: 1000;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+        .modal {
+            background: linear-gradient(135deg, #111424, #0c0f1b);
+            padding: 2.5rem;
+            border-radius: 12px;
+            text-align: center;
+            border: 2px solid #2e3440;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+            max-width: 450px;
+            width: 90%;
+        }
+        .btn {
+            background: #88c0d0;
+            color: #0c0f1b;
+            border: none;
+            padding: 0.6rem 1.5rem;
+            font-size: 1rem;
+            font-family: inherit;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn:hover {
+            background: #81a1c1;
+            box-shadow: 0 0 12px #88c0d0;
+        }
+        .account-item {
+            background: #1a1e36;
+            padding: 0.6rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #2e3440;
+            transition: all 0.2s;
+            color: #eceff4;
+            margin-top: 8px;
+        }
+        .account-item:hover {
+            border-color: #88c0d0;
+            background: #242946;
+        }
+        .account-item.active-user {
+            border-color: #a3be8c;
+            background: #1e2836;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="hub-header">
+        <div class="profile-section" onclick="openAccountModal()">
+            <div class="avatar">👤</div>
+            <div class="profile-info">
+                <h3 id="current-username">Agente da Noite</h3>
+                <p id="profile-status">Status: Operação Ativa</p>
+            </div>
+        </div>
+        <div class="total-stars-box">
+            <span>⭐ <span id="total-stars-count">0</span> / 15</span>
+        </div>
+    </div>
+
+    <h1 class="hub-title">Site de jogos</h1>
+
+    <div class="games-grid">
+
+        <a href="game1.html" target="_blank" rel="noopener noreferrer" class="game-card" data-game-id="1">
+            <div class="game-img-wrapper"><img src="img1.png" alt="Janelas Noturnas"></div>
+            <div class="game-details">
+                <div class="game-name">Janelas Noturnas</div>
+                <div class="stars-row">
+                    <span class="star" data-level="1">★</span>
+                    <span class="star" data-level="2">★</span>
+                    <span class="star" data-level="3">★</span>
+                </div>
+            </div>
+        </a>
+
+        <a href="game2.html" target="_blank" rel="noopener noreferrer" class="game-card" data-game-id="2">
+            <div class="game-img-wrapper"><img src="img5.png" alt="Jogo para atenção"></div>
+            <div class="game-details">
+                <div class="game-name">Jogo para atenção</div>
+                <div class="stars-row">
+                    <span class="star" data-level="1">★</span>
+                    <span class="star" data-level="2">★</span>
+                    <span class="star" data-level="3">★</span>
+                </div>
+            </div>
+        </a>
+
+        <a href="game3.html" target="_blank" rel="noopener noreferrer" class="game-card" data-game-id="3">
+            <div class="game-img-wrapper"><img src="img2.png" alt="Encontra o par"></div>
+            <div class="game-details">
+                <div class="game-name">Encontra o Par</div>
+                <div class="stars-row">
+                    <span class="star" data-level="1">★</span>
+                    <span class="star" data-level="2">★</span>
+                    <span class="star" data-level="3">★</span>
+                </div>
+            </div>
+        </a>
+
+        <a href="game4.html" target="_blank" rel="noopener noreferrer" class="game-card" data-game-id="4">
+            <div class="game-img-wrapper"><img src="img3.png" alt="Jogo dos 15">️</div>
+            <div class="game-details">
+                <div class="game-name">Jogo dos 15</div>
+                <div class="stars-row">
+                    <span class="star" data-level="1">★</span>
+                    <span class="star" data-level="2">★</span>
+                    <span class="star" data-level="3">★</span>
+                </div>
+            </div>
+        </a>
+
+        <a href="game5.html" target="_blank" rel="noopener noreferrer" class="game-card" data-game-id="5">
+            <div class="game-img-wrapper">🏎️🚓🚕</div>
+            <div class="game-details">
+                <div class="game-name">Sequência de Carros</div>
+                <div class="stars-row">
+                    <span class="star" data-level="1">★</span>
+                    <span class="star" data-level="2">★</span>
+                    <span class="star" data-level="3">★</span>
+                </div>
+            </div>
+        </a>
+
+    </div>
+
+    <button class="reset-all-btn" onclick="resetProgress()">Limpar Progresso Desta Conta</button>
+
+    <div class="modal-overlay" id="account-modal">
+        <div class="modal">
+            <h2 style="color: #88c0d0; font-size: 1.8rem; margin-bottom: 1.5rem;">Gerenciar Contas</h2>
+            
+            <div style="margin-bottom: 1.5rem; display: flex; flex-direction: column; gap: 10px; align-items: center;">
+                <input type="text" id="new-username" placeholder="Nome de utilizador..." max="20" style="padding: 0.6rem; font-family: inherit; font-size: 1rem; width: 80%; border-radius: 4px; border: 2px solid #2e3440; background: #0c0f1b; color: #eceff4;">
+                <button class="btn" style="width: 80%;" onclick="createNewAccount()">Criar / Entrar</button>
+            </div>
+
+            <h3 style="font-size: 1.1rem; color: #eceff4; text-align: left; width: 80%; margin: 10px auto 5px auto;">Contas salvas:</h3>
+            <div id="accounts-list" style="max-height: 160px; overflow-y: auto; width: 80%; margin: 0 auto; padding-right: 5px;">
+                </div>
+
+            <button class="btn" style="background: #4c566a; color: #eceff4; margin-top: 1.5rem; padding: 0.4rem 1.2rem;" onclick="closeAccountModal()">Fechar</button>
+        </div>
+    </div>
+
+    <script>
+        // Инициализация данных аккаунтов
+        let currentAccount = localStorage.getItem('hub_active_account') || 'Agente da Noite';
+        let accountsArray = JSON.parse(localStorage.getItem('hub_accounts_list')) || ['Agente da Noite'];
+
+        function initAccounts() {
+            localStorage.setItem('hub_active_account', currentAccount);
+            localStorage.setItem('hub_accounts_list', JSON.stringify(accountsArray));
+            updateProfileUI();
+        }
+
+        function updateProfileUI() {
+            document.getElementById('current-username').innerText = currentAccount;
+            document.getElementById('profile-status').innerText = currentAccount === 'Agente da Noite' ? 'Status: Operação Ativa' : 'Status: Jogador Ativo';
+        }
+
+        function openAccountModal() {
+            renderAccountsList();
+            document.getElementById('account-modal').classList.add('active');
+        }
+
+        function closeAccountModal() {
+            document.getElementById('account-modal').classList.remove('active');
+        }
+
+        function renderAccountsList() {
+            const container = document.getElementById('accounts-list');
+            container.innerHTML = '';
+            accountsArray.forEach(acc => {
+                const item = document.createElement('div');
+                item.className = `account-item ${acc === currentAccount ? 'active-user' : ''}`;
+                item.innerHTML = `
+                    <span>${acc} ${acc === currentAccount ? '✔️' : ''}</span>
+                    <span style="font-size: 0.8rem; color: #88c0d0;">Selecionar</span>
+                `;
+                item.onclick = () => switchAccount(acc);
+                container.appendChild(item);
+            });
+        }
+
+        function createNewAccount() {
+            const input = document.getElementById('new-username');
+            const name = input.value.trim();
+            if (!name) return alert('Por favor, introduza un nome de utilizador!');
+            if (name.length > 20) return alert('O nome é muito longo! (Máx. 20)');
+
+            if (!accountsArray.includes(name)) {
+                accountsArray.push(name);
+                localStorage.setItem('hub_accounts_list', JSON.stringify(accountsArray));
+            }
+            input.value = '';
+            switchAccount(name);
+        }
+
+        // Логика сохранения данных старого аккаунта в изолированную область и загрузка нового
+        function switchAccount(name) {
+            saveCurrentUserData(currentAccount);
+            currentAccount = name;
+            localStorage.setItem('hub_active_account', currentAccount);
+            loadUserData(currentAccount);
+            
+            updateProfileUI();
+            updateHubProgress();
+            closeAccountModal();
+        }
+
+        function saveCurrentUserData(username) {
+            for (let g = 1; g <= 5; g++) {
+                for (let l = 1; l <= 3; l++) {
+                    const key = `game${g}_level${l}`;
+                    const val = localStorage.getItem(key);
+                    if (val) {
+                        localStorage.setItem(`account_${username}_${key}`, val);
+                    } else {
+                        localStorage.removeItem(`account_${username}_${key}`);
+                    }
+                }
+            }
+        }
+
+        function loadUserData(username) {
+            // Очищаем текущие глобальные ключи, чтобы записать новые данные
+            for (let g = 1; g <= 5; g++) {
+                for (let l = 1; l <= 3; l++) {
+                    localStorage.removeItem(`game${g}_level${l}`);
+                }
+            }
+            // Переносим сохраненные уровни аккаунта в глобальные ключи для игр
+            for (let g = 1; g <= 5; g++) {
+                for (let l = 1; l <= 3; l++) {
+                    const key = `game${g}_level${l}`;
+                    const val = localStorage.getItem(`account_${username}_${key}`);
+                    if (val) {
+                        localStorage.setItem(key, val);
+                    }
+                }
+            }
+        }
+
+        function updateHubProgress() {
+            let totalStars = 0;
+            const gameCards = document.querySelectorAll('.game-card');
+
+            gameCards.forEach(card => {
+                const gameId = card.getAttribute('data-game-id');
+                const stars = card.querySelectorAll('.star');
+
+                stars.forEach(star => {
+                    const levelId = star.getAttribute('data-level');
+                    const record = localStorage.getItem(`game${gameId}_level${levelId}`);
+
+                    if (record === 'passed') {
+                        star.classList.add('active');
+                        totalStars++;
+                    } else {
+                        star.classList.remove('active');
+                    }
+                });
+            });
+
+            document.getElementById('total-stars-count').innerText = totalStars;
+        }
+
+        // Очистка прогресса только для ТЕКУЩЕЙ активной сессии
+        function resetProgress() {
+            if(confirm(`Tens a certeza que queres apagar o progresso da conta "${currentAccount}"?`)) {
+                for (let g = 1; g <= 5; g++) {
+                    for (let l = 1; l <= 3; l++) {
+                        localStorage.removeItem(`game${g}_level${l}`);
+                        localStorage.removeItem(`account_${currentAccount}_game${g}_level${l}`);
+                    }
+                }
+                updateHubProgress();
+            }
+        }
+
+        window.onload = function() {
+            initAccounts();
+            updateHubProgress();
+        };
+    </script>
+</body>
+</html>

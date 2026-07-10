@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Encontra o Par</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --bg-color: #1e1b4b;
+            --card-bg: #312e81;
+            --card-back: #4f46e5;
+            --text: #e0e7ff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=1920&auto=format&fit=crop') center/cover no-repeat fixed;
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem 1rem;
+            overflow-x: hidden;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 1rem 2rem;
+            border-radius: 15px;
+            backdrop-filter: blur(5px);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 4px 15px rgba(0, 0, 0, 0.8);
+            color: #ffffff;
+        }
+
+        .stats {
+            display: flex;
+            gap: 2rem;
+            font-size: 1.2rem;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.8rem 1.5rem;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+            color: #ffffff;
+        }
+
+        .game-board {
+            display: grid;
+            gap: 15px;
+            perspective: 1000px;
+            max-width: 800px;
+            margin: 0 auto;
+            justify-content: center;
+        }
+
+        /* Настройки колонок для каждого типа арены */
+        .grid-level-1 { grid-template-columns: repeat(3, 1fr); }
+        .grid-level-2 { grid-template-columns: repeat(4, 1fr); }
+        .grid-level-3 { grid-template-columns: repeat(6, 1fr); }
+
+        .card, .empty-card {
+            width: 80px;
+            height: 100px;
+        }
+
+        .empty-card {
+            visibility: hidden; /* Скрытые технические ячейки для создания формы */
+        }
+
+        @media (min-width: 600px) {
+            .card, .empty-card { width: 100px; height: 120px; }
+        }
+
+        .card {
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
+            cursor: pointer;
+        }
+
+        .card.flipped, .card.matched {
+            transform: rotateY(180deg);
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.4);
+            transition: box-shadow 0.3s ease;
+        }
+
+        .card-front {
+            background: linear-gradient(45deg, var(--card-back), #818cf8);
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+
+        .card-front::after {
+            content: '?';
+            color: rgba(255,255,255,0.7);
+            font-size: 2.5rem;
+            font-weight: bold;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+        }
+
+        .card:hover .card-front {
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.6);
+        }
+
+        .card-back {
+            background: var(--card-bg);
+            transform: rotateY(180deg);
+            border: 2px solid var(--primary);
+        }
+
+        .card.matched .card-back {
+            background: #166534;
+            border-color: #22c55e;
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.6);
+            animation: pulse 1s infinite alternate;
+        }
+
+        @keyframes pulse {
+            0% { transform: rotateY(180deg) scale(1); }
+            100% { transform: rotateY(180deg) scale(1.05); }
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+            z-index: 100;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal {
+            background: linear-gradient(135deg, var(--card-bg), var(--bg-color));
+            padding: 3rem;
+            border-radius: 20px;
+            text-align: center;
+            transform: translateY(20px);
+            transition: transform 0.4s ease;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .modal h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        #welcome-modal h2 { color: #818cf8; }
+        #victory-modal h2 { color: #22c55e; }
+        #gameover-modal h2 { color: #ef4444; }
+
+        .modal-overlay.active .modal {
+            transform: translateY(0);
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1.2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background: #4f46e5;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.6);
+        }
+        
+        .back-to-menu-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background-color: #2e3440;
+            color: #eceff4;
+            border: 2px solid #4c566a;
+            padding: 0.6rem 1.2rem;
+            font-family: 'Courier New', monospace;
+            font-size: 1rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            text-decoration: none;
+            border-radius: 4px;
+            z-index: 100;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .back-to-menu-btn:hover {
+            background-color: #4c566a;
+            border-color: #88c0d0;
+            color: #88c0d0;
+            box-shadow: 0 0 10px rgba(136, 192, 208, 0.3);
+        }
+    </style>
+</head>
+<body>
+    
+    <a href="index.html" class="back-to-menu-btn">↩ Menu</a>
+    <div class="header">
+        <h1>Encontra o Par</h1>
+        <div class="stats">
+            <div>Nível: <span id="level-indicator">1</span>/3</div>
+            <div>Tempo: <span id="timer-counter">60</span>s</div>
+            <div>Pares: <span id="pairs-counter">0</span>/<span id="total-pairs">0</span></div>
+        </div>
+    </div>
+
+    <div class="game-board" id="game-board"></div>
+
+    <div class="modal-overlay active" id="welcome-modal">
+        <div class="modal">
+            <h2>Encontra o Par</h2>
+            <p>Encontra todos os pares de animais idênticos antes que o tempo acabe! O jogo tem 3 níveis com dificuldade crescente.</p>
+            <button class="btn" onclick="startGame()">Começar Jogo</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="victory-modal">
+        <div class="modal">
+            <h2>Parabéns!</h2>
+            <p>Concluíste o jogo todo!</p>
+            <button class="btn" onclick="restartGame()">Jogar Novamente</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="gameover-modal">
+        <div class="modal">
+            <h2>Tempo Esgotado!</h2>
+            <p>Não conseguiste terminar o nível dentro do tempo limite.</p>
+            <button class="btn" onclick="restartGame()">Tentar Novamente</button>
+        </div>
+    </div>
+
+    <script>
+        const allEmojis = ['🐮', '🦊', '🐶', '🐱', '🐼', '🦁', '🐸', '🐯', '🐷', '🐵', '🐨', '🐻'];
+        
+        const levelConfigs = [
+            { 
+                cards: 8, 
+                gridClass: 'grid-level-1',
+                map: [
+                    1, 1, 1,
+                    1, 0, 1,
+                    1, 1, 1
+                ]
+            },
+            { 
+                cards: 16, 
+                gridClass: 'grid-level-2',
+                map: [
+                    1, 1, 1, 1,
+                    1, 1, 1, 1,
+                    1, 1, 1, 1,
+                    1, 1, 1, 1
+                ]
+            },
+            { 
+                cards: 20, 
+                gridClass: 'grid-level-3',
+                map: [
+                    0, 1, 0, 0, 1, 0,
+                    1, 0, 1, 1, 0, 1,
+                    0, 1, 1, 1, 1, 0,
+                    0, 1, 1, 1, 1, 0,
+                    1, 0, 1, 1, 0, 1,
+                    0, 1, 0, 0, 1, 0
+                ]
+            }
+        ];
+
+        let currentLevel = 0;
+        let flippedCards = [];
+        let matchedPairs = 0;
+        let isLocked = false;
+        let timeLeft = 60;
+        let timerInterval = null;
+
+        const board = document.getElementById('game-board');
+        const levelIndicator = document.getElementById('level-indicator');
+        const timerCounter = document.getElementById('timer-counter');
+        const pairsCounter = document.getElementById('pairs-counter');
+        const totalPairsElement = document.getElementById('total-pairs');
+        const welcomeModal = document.getElementById('welcome-modal');
+        const victoryModal = document.getElementById('victory-modal');
+        const gameoverModal = document.getElementById('gameover-modal');
+
+        
+        function startGame() {
+            welcomeModal.classList.remove('active');
+            currentLevel = 0;
+            initLevel();
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            timeLeft = 60;
+            timerCounter.textContent = timeLeft;
+
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerCounter.textContent = timeLeft;
+
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    gameOver();
+                }
+            }, 1000);
+        }
+
+        function gameOver() {
+            isLocked = true;
+            gameoverModal.classList.add('active');
+        }
+
+        function initLevel() {
+            board.innerHTML = '';
+            flippedCards = [];
+            matchedPairs = 0;
+            isLocked = false;
+            
+            const config = levelConfigs[currentLevel];
+            const pairsNeeded = config.cards / 2;
+            
+            levelIndicator.textContent = currentLevel + 1;
+            pairsCounter.textContent = matchedPairs;
+            totalPairsElement.textContent = pairsNeeded;
+
+            board.className = `game-board ${config.gridClass}`;
+
+            const levelEmojis = allEmojis.slice(0, pairsNeeded);
+            const cardsArray = [...levelEmojis, ...levelEmojis];
+            cardsArray.sort(() => Math.random() - 0.5);
+
+            let cardIndex = 0;
+
+            config.map.forEach(slot => {
+                if (slot === 0) {
+                    const emptySlot = document.createElement('div');
+                    emptySlot.classList.add('empty-card');
+                    board.appendChild(emptySlot);
+                } else {
+                    const emoji = cardsArray[cardIndex++];
+                    const card = document.createElement('div');
+                    card.classList.add('card');
+                    card.dataset.emoji = emoji;
+
+                    card.innerHTML = `
+                        <div class="card-face card-front"></div>
+                        <div class="card-face card-back">${emoji}</div>
+                    `;
+
+                    card.addEventListener('click', () => flipCard(card));
+                    board.appendChild(card);
+                }
+            });
+
+            startTimer();
+        }
+
+        function flipCard(card) {
+            if (isLocked || card === flippedCards[0] || card.classList.contains('matched')) return;
+
+            card.classList.add('flipped');
+            flippedCards.push(card);
+
+            if (flippedCards.length === 2) {
+                checkMatch();
+            }
+        }
+
+        function checkMatch() {
+            isLocked = true;
+            const [card1, card2] = flippedCards;
+            const match = card1.dataset.emoji === card2.dataset.emoji;
+
+            if (match) {
+                card1.classList.add('matched');
+                card2.classList.add('matched');
+                matchedPairs++;
+                pairsCounter.textContent = matchedPairs;
+                resetBoard();
+
+                if (matchedPairs === levelConfigs[currentLevel].cards / 2) {
+                    clearInterval(timerInterval);
+                    setTimeout(levelComplete, 800);
+                }
+            } else {
+                setTimeout(() => {
+                    card1.classList.remove('flipped');
+                    card2.classList.remove('flipped');
+                    resetBoard();
+                }, 1000);
+            }
+        }
+
+        function resetBoard() {
+            flippedCards = [];
+            isLocked = false;
+        }
+
+        function levelComplete() {
+           
+            localStorage.setItem(`game3_level${currentLevel + 1}`, 'passed');
+
+            if (currentLevel < levelConfigs.length - 1) {
+                currentLevel++;
+                initLevel();
+            } else {
+                victoryModal.classList.add('active');
+            }
+        }
+
+        function restartGame() {
+            victoryModal.classList.remove('active');
+            gameoverModal.classList.remove('active');
+            currentLevel = 0;
+            initLevel();
+        }
+    </script>
+</body>
+</html>

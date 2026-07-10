@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEQUÊNCIA DE CARROS</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Courier New', monospace;
+            background-color: #0c0f1b;
+            color: #d8dee9;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        * { box-sizing: border-box; }
+
+        #game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            padding: 2rem;
+        }
+
+        .title { color: #88c0d0; font-size: 2.5rem; text-transform: uppercase; margin-top: 0; margin-bottom: 1rem; text-shadow: 0 0 10px #88c0d0; text-align: center; }
+        .instructions { font-size: 1.2rem; color: #a3be8c; margin-bottom: 1.5rem; text-align: center; }
+        .timer-container { font-size: 1.5rem; margin-bottom: 1.5rem; color: #eceff4; }
+        .timer-countdown { color: #ebcb8b; font-weight: bold; text-shadow: 0 0 5px #ebcb8b; }
+
+        /* Контейнеры для цепочек машин */
+        .sequence-display {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            align-items: center;
+            min-height: 90px;
+            margin-bottom: 2rem;
+            padding: 10px;
+            background: #111;
+            border: 2px dashed #444;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 650px;
+        }
+
+        .car-node {
+            font-size: 2.5rem;
+            width: 65px;
+            height: 65px;
+            background: #1a1e36;
+            border: 2px solid #3b4252;
+            border-radius: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+            transition: all 0.2s ease;
+        }
+        .car-node:hover {
+            border-color: #d08770;
+            box-shadow: 0 0 10px rgba(208, 135, 112, 0.4);
+        }
+
+        /* Палитра выбора */
+        .palette-title { font-size: 1rem; color: #4c566a; text-transform: uppercase; margin-bottom: 0.5rem; }
+        .palette-container {
+            display: flex;
+            gap: 15px;
+            background: #0f1325;
+            padding: 15px;
+            border: 2px solid #333;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+        }
+        .palette-item {
+            font-size: 2.5rem;
+            width: 70px;
+            height: 70px;
+            background: #2e3440;
+            border: 2px solid #88c0d0;
+            border-radius: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .palette-item:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 15px #88c0d0;
+        }
+
+        .button {
+            padding: 1rem 2rem;
+            font-size: 1.5rem;
+            text-transform: uppercase;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .button-start { background-color: #a3be8c; color: #0c0f1b; }
+        .button-start:hover { box-shadow: 0 0 20px #a3be8c; }
+        .button-check { background-color: #81a1c1; color: #0c0f1b; font-size: 1.2rem; }
+        .button-check:hover { box-shadow: 0 0 20px #81a1c1; }
+        .button-giveup { background-color: #d08770; color: #0c0f1b; padding: 0.8rem 1.5rem; font-size: 1.2rem; margin-top: 1.5rem;}
+        .button-giveup:hover { box-shadow: 0 0 20px #d08770; }
+
+        #splash-screen, #feedback-screen, #preview-screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background-color: rgba(12, 15, 27, 0.95);
+            z-index: 10;
+        }
+        #feedback-screen .instructions { font-size: 2rem; color: #ebcb8b; }
+
+				.back-to-menu-btn {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background-color: #2e3440;
+    color: #eceff4;
+    border: 2px solid #4c566a;
+    padding: 0.6rem 1.2rem;
+    font-family: 'Courier New', monospace;
+    font-size: 1rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    text-decoration: none;
+    border-radius: 4px;
+    z-index: 100; /* Чтобы кнопка всегда была поверх окон */
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+		.back-to-menu-btn:hover {
+    background-color: #4c566a;
+    border-color: #88c0d0;
+    color: #88c0d0;
+    box-shadow: 0 0 10px rgba(136, 192, 208, 0.3);
+}
+
+    </style>
+</head>
+<body>
+
+	<a href="index.html" class="back-to-menu-btn">↩ Menu</a>
+
+    <div id="splash-screen">
+        <h1 class="title">SEQUÊNCIA DE CARROS</h1>
+        <p class="instructions">NÍVEL 1 (4 Carros — 25s)</p>
+        <button id="start-btn" class="button button-start">Iniciar Jogo</button>
+    </div>
+
+    <div id="preview-screen" style="display: none;">
+        <h1 id="preview-title" class="title">MEMORIZAR SEQUÊNCIA</h1>
+        <div class="timer-container">
+            <span>TEMPO: </span>
+            <span id="preview-timer" class="timer-countdown">5s</span>
+        </div>
+        <p class="instructions">DECORA A ORDEM EXATA DOS CARROS</p>
+        <div id="preview-sequence" class="sequence-display"></div>
+    </div>
+
+    <div id="feedback-screen" style="display: none;">
+        <h1 class="title">Resultado</h1>
+        <p id="feedback-text" class="instructions"></p>
+        <button id="reset-btn" class="button button-start">Próximo Nível / Reiniciar</button>
+    </div>
+
+    <div id="game-container" style="display: none;">
+        <h2 id="level-title" class="title">NÍVEL 1</h2>
+        <p class="instructions">RECOSTRÓI A SEQUÊNCIA (Clica para remover um carro)</p>
+        
+        <div class="timer-container">
+            <span>TEMPO RESTANTE: </span>
+            <span id="game-timer" class="timer-countdown">25s</span>
+        </div>
+
+        <div id="player-sequence" class="sequence-display"></div>
+
+        <div class="palette-title">Carros Disponíveis:</div>
+        <div id="palette" class="palette-container"></div>
+
+        <button id="check-btn" class="button button-check">Confirmar Resposta</button>
+        <button id="giveup-btn" class="button button-giveup">Desistir</button>
+    </div>
+
+    <script>
+        
+        const carPool = ["🚗", "🚙", "🏎️", "🚓", "🚑", "🚒", "🚕"];
+
+        const splashScreen = document.getElementById('splash-screen');
+        const previewScreen = document.getElementById('preview-screen');
+        const previewTimerDisplay = document.getElementById('preview-timer');
+        const previewSeqDisplay = document.getElementById('preview-sequence');
+        
+        const feedbackScreen = document.getElementById('feedback-screen');
+        const feedbackText = document.getElementById('feedback-text');
+        const gameContainer = document.getElementById('game-container');
+        const playerSeqDisplay = document.getElementById('player-sequence');
+        const paletteContainer = document.getElementById('palette');
+        const timerDisplay = document.getElementById('game-timer');
+        const levelTitle = document.getElementById('level-title');
+        
+        const startBtn = document.getElementById('start-btn');
+        const checkBtn = document.getElementById('check-btn');
+        const giveupBtn = document.getElementById('giveup-btn');
+        const resetBtn = document.getElementById('reset-btn');
+
+        const gameConfig = {
+            levels: [
+                { id: 1, count: 4, timeLimit: 25 },
+                { id: 2, count: 6, timeLimit: 25 },
+                { id: 3, count: 8, timeLimit: 25 }
+            ]
+        };
+
+        let currentLevel = 1;
+        let config = gameConfig.levels[0];
+        let targetSequence = [];
+        let playerSequence = [];
+        let timerInterval;
+        let timeLeft;
+        let isLevelPassed = false;
+
+        function initLevel() {
+            config = gameConfig.levels[currentLevel - 1];
+            isLevelPassed = false;
+            playerSequence = [];
+
+            
+            targetSequence = [];
+            for(let i = 0; i < config.count; i++) {
+                const randomCar = carPool[Math.floor(Math.random() * carPool.length)];
+                targetSequence.push(randomCar);
+            }
+
+            startPreviewPhase();
+        }
+
+        
+        function startPreviewPhase() {
+            let previewTimeLeft = 5;
+            previewTimerDisplay.innerText = `${previewTimeLeft}s`;
+            
+            previewSeqDisplay.innerHTML = '';
+            targetSequence.forEach(car => {
+                const node = document.createElement('div');
+                node.className = 'car-node';
+                node.innerText = car;
+                previewSeqDisplay.appendChild(node);
+            });
+
+            splashScreen.style.display = 'none';
+            feedbackScreen.style.display = 'none';
+            gameContainer.style.display = 'none';
+            previewScreen.style.display = 'flex';
+
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                previewTimeLeft--;
+                previewTimerDisplay.innerText = `${previewTimeLeft}s`;
+                if (previewTimeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    startPlayPhase();
+                }
+            }, 1000);
+        }
+
+        
+        function startPlayPhase() {
+            timeLeft = config.timeLimit;
+            timerDisplay.innerText = `${timeLeft}s`;
+            levelTitle.innerText = `NÍVEL ${currentLevel}`;
+
+            renderPlayerSequence();
+            renderPalette();
+
+            previewScreen.style.display = 'none';
+            gameContainer.style.display = 'flex';
+
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerDisplay.innerText = `${timeLeft}s`;
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    checkAnswer(); 
+                }
+            }, 1000);
+        }
+
+        function renderPalette() {
+            paletteContainer.innerHTML = '';
+            carPool.forEach(car => {
+                const item = document.createElement('div');
+                item.className = 'palette-item';
+                item.innerText = car;
+                item.addEventListener('click', () => {
+                    if (playerSequence.length < config.count) {
+                        playerSequence.push(car);
+                        renderPlayerSequence();
+                    }
+                });
+                paletteContainer.appendChild(item);
+            });
+        }
+
+        function renderPlayerSequence() {
+            playerSeqDisplay.innerHTML = '';
+            
+            playerSequence.forEach((car, index) => {
+                const node = document.createElement('div');
+                node.className = 'car-node';
+                node.innerText = car;
+                
+                node.addEventListener('click', () => {
+                    playerSequence.splice(index, 1);
+                    renderPlayerSequence();
+                });
+                playerSeqDisplay.appendChild(node);
+            });
+
+           
+            const emptySlots = config.count - playerSequence.length;
+            for(let i = 0; i < emptySlots; i++) {
+                const emptyNode = document.createElement('div');
+                emptyNode.className = 'car-node';
+                emptyNode.style.opacity = "0.3";
+                emptyNode.innerText = "？";
+                playerSeqDisplay.appendChild(emptyNode);
+            }
+        }
+
+        function checkAnswer() {
+            clearInterval(timerInterval);
+            let correct = true;
+
+            if (playerSequence.length !== targetSequence.length) {
+                correct = false;
+            } else {
+                for (let i = 0; i < targetSequence.length; i++) {
+                    if (targetSequence[i] !== playerSequence[i]) {
+                        correct = false;
+                        break;
+                    }
+                }
+            }
+
+            gameContainer.style.display = 'none';
+            feedbackScreen.style.display = 'flex';
+
+            if (correct) {
+                isLevelPassed = true;
+                
+                
+                localStorage.setItem(`game5_level${currentLevel}`, 'passed');
+                
+                feedbackText.innerText = "Sucesso! A sequência está absolutamente correta.";
+                if (currentLevel < gameConfig.levels.length) {
+                    feedbackText.innerText += " Avança para o próximo nível.";
+                    resetBtn.innerText = `Próximo Nível (${currentLevel + 1})`;
+                } else {
+                    feedbackText.innerText += " Jogo Concluído! Parabéns!";
+                    resetBtn.innerText = "Reiniciar Jogo";
+                }
+            } else {
+                isLevelPassed = false;
+                feedbackText.innerText = "Falhaste. A sequência não coincide.";
+                resetBtn.innerText = `Tentar o Nível ${currentLevel} Novamente`;
+            }
+        }
+
+        function handleReset() {
+            if (isLevelPassed) {
+                currentLevel++;
+                if (currentLevel > gameConfig.levels.length) {
+                    currentLevel = 1; 
+                }
+            }
+            initLevel();
+        }
+
+        function handleGiveUp() {
+            clearInterval(timerInterval);
+            currentLevel = 1;
+            isLevelPassed = false;
+            splashScreen.style.display = 'flex';
+            const instructionsText = splashScreen.querySelector('.instructions');
+            instructionsText.innerText = `NÍVEL 1 (4 Carros — 25s)`;
+            gameContainer.style.display = 'none';
+            feedbackScreen.style.display = 'none';
+            previewScreen.style.display = 'none';
+        }
+
+        startBtn.addEventListener('click', initLevel);
+        checkBtn.addEventListener('click', checkAnswer);
+        giveupBtn.addEventListener('click', handleGiveUp);
+        resetBtn.addEventListener('click', handleReset);
+    </script>
+</body>
+</html>
